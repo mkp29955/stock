@@ -62,16 +62,16 @@
       font-size: 11px; color: #94a3b8; margin-top: 6px; text-align: center;
     }
 
+    /* 바로가기 버튼 영역: 네이버 시세·차트 단독 구성 */
     .action-links {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px;
+      margin-top: 14px;
     }
     .ext-btn {
-      display: flex; justify-content: center; align-items: center; gap: 4px;
-      padding: 12px; border-radius: 10px; text-decoration: none;
-      font-size: 13px; font-weight: 700;
+      display: flex; justify-content: center; align-items: center; gap: 6px;
+      padding: 13px; border-radius: 10px; text-decoration: none;
+      font-size: 14px; font-weight: 700;
     }
     .btn-naver { background: #03c75a; color: #ffffff; }
-    .btn-toss { background: #e0e7ff; color: #2563eb; border: 1px solid #c7d2fe; }
 
     .memo-section h3 { font-size: 15px; margin: 0 0 12px 0; color: #1e293b; }
     .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
@@ -111,9 +111,9 @@
         <div class="chart-tag" id="chartNotice">일봉 시세 차트</div>
       </div>
 
+      <!-- 토스증권 삭제 후 네이버 시세·차트 단독 버튼 배치 -->
       <div class="action-links">
-        <a id="linkNaver" href="#" target="_blank" class="ext-btn btn-naver">네이버 시세·차트</a>
-        <a id="linkToss" href="#" target="_blank" class="ext-btn btn-toss">⚡ 토스증권 실시간</a>
+        <a id="linkNaver" href="#" target="_blank" class="ext-btn btn-naver">📊 네이버 증권 상세 시세·차트 보기</a>
       </div>
     </div>
 
@@ -192,11 +192,8 @@
       const t = new Date().getTime();
       document.getElementById('stockChart').src = `https://fchart.stock.naver.com/item/area.naver?symbol=${stock.code}&timeframe=day&count=60&requestType=0&_t=${t}`;
 
-      // 네이버 모바일 증권
+      // 네이버 모바일 증권 상세 페이지로 연결
       document.getElementById('linkNaver').href = `https://m.stock.naver.com/domestic/stock/${stock.code}/total`;
-      
-      // 모바일 스마트폰 전용 토스증권 화면 주소로 변경
-      document.getElementById('linkToss').href = `https://www.tossinvest.com/stocks/A${stock.code}`;
     }
 
     function refreshDisplay() {
