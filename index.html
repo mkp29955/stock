@@ -12,15 +12,13 @@
     }
     .container { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 14px; }
     
-    /* 상단 헤더 */
     .header { display: flex; justify-content: space-between; align-items: center; padding: 0 4px; }
-    .header h1 { font-size: 20px; font-weight: 800; margin: 0; color: #0f172a; display: flex; align-items: center; gap: 6px; }
+    .header h1 { font-size: 20px; font-weight: 800; margin: 0; color: #0f172a; }
     .btn-top {
       padding: 6px 12px; background: #2563eb; color: #fff; border: none;
       border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
     }
 
-    /* 종목 탭 영역 */
     .tab-container {
       display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px;
       -webkit-overflow-scrolling: touch;
@@ -37,7 +35,6 @@
       cursor: pointer; white-space: nowrap; flex-shrink: 0;
     }
 
-    /* 카드 */
     .card {
       background: #ffffff; border-radius: 16px; padding: 18px;
       box-shadow: 0 4px 6px -1px rgba(0,0,0,0.06);
@@ -50,11 +47,11 @@
     .stock-name { font-size: 20px; font-weight: 800; color: #0f172a; }
     .stock-code { font-size: 13px; color: #64748b; margin-top: 2px; }
     .del-stock-btn {
-      background: none; border: 1px solid #e2e8f0; border-radius: 6px;
-      color: #94a3b8; font-size: 11px; padding: 4px 8px; cursor: pointer;
+      background: #fee2e2; border: 1px solid #fca5a5; border-radius: 8px;
+      color: #b91c1c; font-size: 12px; font-weight: 700; padding: 6px 10px; cursor: pointer;
     }
+    .del-stock-btn:active { background: #fecaca; }
 
-    /* 차트 및 시세 뷰 */
     .chart-container {
       width: 100%; border-radius: 12px; overflow: hidden; background: #fafafa;
       border: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: center;
@@ -63,7 +60,6 @@
     .chart-img { width: 100%; height: auto; display: block; }
     .chart-notice { font-size: 11px; color: #94a3b8; margin: 8px 0; text-align: center; }
 
-    /* 바로가기 버튼 */
     .action-links {
       display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px;
     }
@@ -74,7 +70,6 @@
     .btn-naver { background: #03c75a; color: #ffffff; }
     .btn-dart { background: #f8fafc; color: #334155; border: 1px solid #cbd5e1; }
 
-    /* 투자 메모 & 계획 */
     .memo-section h3 { font-size: 15px; margin: 0 0 12px 0; color: #1e293b; }
     .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
     .input-group label { display: block; font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 4px; }
@@ -97,20 +92,17 @@
       <button class="btn-top" onclick="refreshDisplay()">새로고침</button>
     </div>
 
-    <!-- 종목 탭 바 (화면에서 직접 추가 가능) -->
     <div class="tab-container" id="tabContainer"></div>
 
-    <!-- 선택된 종목 시세 카드 -->
     <div class="card">
       <div class="stock-title-area">
         <div>
-          <div class="stock-name" id="dispName">기업은행</div>
-          <div class="stock-code" id="dispCode">024110 · KOSPI</div>
+          <div class="stock-name" id="dispName">-</div>
+          <div class="stock-code" id="dispCode">-</div>
         </div>
         <button class="del-stock-btn" onclick="deleteCurrentStock()">이 종목 삭제</button>
       </div>
 
-      <!-- 실시간 시세 및 1일 차트 영역 -->
       <div class="chart-container">
         <img id="stockChart" class="chart-img" src="" alt="차트 불러오는 중..." />
         <div class="chart-notice">※ 네이버 증권 공식 실시간 1일 시세 차트</div>
@@ -122,7 +114,6 @@
       </div>
     </div>
 
-    <!-- 메모 & 목표가 영역 -->
     <div class="card memo-section">
       <h3>🎯 나의 투자 계획 & 메모</h3>
       <div class="input-grid">
@@ -137,14 +128,13 @@
       </div>
       <div class="input-group">
         <label>매수 사유 / 배당 일정 / 메모</label>
-        <textarea id="stockMemo" class="input-box" rows="3" placeholder="매수 사유, 배당락 일정 등을 기록해 두세요."></textarea>
+        <textarea id="stockMemo" class="input-box" rows="3" placeholder="매수 사유, 배당락 일정 등을 기록하세요."></textarea>
       </div>
       <button class="save-btn" onclick="saveMemo()">메모 & 목표가 저장</button>
     </div>
   </div>
 
   <script>
-    // 기본 종목 리스트
     const defaultStocks = [
       { name: "기업은행", code: "024110" },
       { name: "삼성전자", code: "005930" },
@@ -152,43 +142,41 @@
       { name: "현대차", code: "005380" }
     ];
 
-    // 저장된 종목 불러오기 (없으면 기본값)
     let myStocks = JSON.parse(localStorage.getItem('my_custom_stocks')) || defaultStocks;
     let currentIndex = 0;
 
-    // 탭 렌더링
     function renderTabs() {
       const container = document.getElementById('tabContainer');
       container.innerHTML = '';
 
       myStocks.forEach((stock, idx) => {
         const btn = document.createElement('button');
+        btn.type = 'button';
         btn.className = `tab-btn ${idx === currentIndex ? 'active' : ''}`;
         btn.innerText = stock.name;
+        // 클릭 시 해당 순번(idx)을 명확하게 넘겨서 선택하도록 수정
         btn.onclick = () => selectStock(idx);
         container.appendChild(btn);
       });
 
-      // [+ 종목 추가] 버튼 추가
       const addBtn = document.createElement('button');
+      addBtn.type = 'button';
       addBtn.className = 'tab-add-btn';
       addBtn.innerText = '+ 종목 추가';
       addBtn.onclick = addNewStock;
       container.appendChild(addBtn);
     }
 
-    // 종목 선택
     function selectStock(index) {
-      if (index >= myStocks.length) index = 0;
-      currentIndex = index;
+      currentIndex = Number(index);
+      if (currentIndex >= myStocks.length) currentIndex = 0;
       renderTabs();
       updateDisplay();
       loadMemo();
     }
 
-    // 화면 갱신
     function updateDisplay() {
-      if (myStocks.length === 0) {
+      if (!myStocks || myStocks.length === 0) {
         document.getElementById('dispName').innerText = '종목을 추가하세요';
         document.getElementById('dispCode').innerText = '------';
         document.getElementById('stockChart').src = '';
@@ -199,11 +187,9 @@
       document.getElementById('dispName').innerText = stock.name;
       document.getElementById('dispCode').innerText = `${stock.code} · KOSPI/KOSDAQ`;
 
-      // 네이버 증권 1일 실시간 시세 이미지 연동
       const t = new Date().getTime();
       document.getElementById('stockChart').src = `https://ssl.pstatic.net/imgfinance/chart/mobile/mini/${stock.code}_end.png?${t}`;
 
-      // 바로가기 링크 세팅
       document.getElementById('linkNaver').href = `https://m.stock.naver.com/domestic/stock/${stock.code}/total`;
       document.getElementById('linkDart').href = `https://dart.fss.or.kr/dsab007/main.do?textCrpNm=${encodeURIComponent(stock.name)}`;
     }
@@ -212,36 +198,41 @@
       updateDisplay();
     }
 
-    // 화면에서 직접 새로운 회사 등록하기
     function addNewStock() {
       const name = prompt("추가할 회사 이름을 입력하세요:\n(예: SK하이닉스, NAVER)");
-      if (!name) return;
+      if (!name || !name.trim()) return;
 
-      const code = prompt(`[${name}]의 6자리 종목코드를 입력하세요:\n(예: 000660)\n* 모르실 경우 네이버 증권에서 검색하시면 나옵니다.`);
-      if (!code) return;
+      const code = prompt(`[${name.trim()}]의 6자리 종목코드를 입력하세요:\n(예: 000660)`);
+      if (!code || !code.trim()) return;
 
-      const cleanCode = code.trim();
-      myStocks.push({ name: name.trim(), code: cleanCode });
+      myStocks.push({ name: name.trim(), code: code.trim() });
       localStorage.setItem('my_custom_stocks', JSON.stringify(myStocks));
       
       selectStock(myStocks.length - 1);
     }
 
-    // 현재 선택된 종목 삭제
+    // 종목 삭제 동작
     function deleteCurrentStock() {
       if (myStocks.length <= 1) {
-        alert("최소 1개 이상의 종목이 유지되어야 합니다.");
+        alert("최소 1개 이상의 종목이 있어야 합니다.");
         return;
       }
-      const cur = myStocks[currentIndex];
-      if (confirm(`'${cur.name}' 종목을 대시보드에서 삭제하시겠습니까?`)) {
+      
+      const currentTarget = myStocks[currentIndex];
+      const isConfirmed = confirm(`'${currentTarget.name}' 종목을 정말 삭제하시겠습니까?`);
+      
+      if (isConfirmed) {
         myStocks.splice(currentIndex, 1);
         localStorage.setItem('my_custom_stocks', JSON.stringify(myStocks));
-        selectStock(0);
+        
+        // 삭제 후 첫 번째 종목으로 이동
+        currentIndex = 0;
+        renderTabs();
+        updateDisplay();
+        loadMemo();
       }
     }
 
-    // 메모 저장
     function saveMemo() {
       if (myStocks.length === 0) return;
       const code = myStocks[currentIndex].code;
@@ -251,10 +242,9 @@
         memo: document.getElementById('stockMemo').value
       };
       localStorage.setItem(`memo_${code}`, JSON.stringify(data));
-      alert(`[${myStocks[currentIndex].name}] 투자 메모가 저장되었습니다.`);
+      alert(`[${myStocks[currentIndex].name}] 메모가 저장되었습니다.`);
     }
 
-    // 메모 불러오기
     function loadMemo() {
       if (myStocks.length === 0) return;
       const code = myStocks[currentIndex].code;
@@ -271,7 +261,7 @@
       }
     }
 
-    // 초기 실행
+    // 처음 실행
     renderTabs();
     selectStock(0);
   </script>
