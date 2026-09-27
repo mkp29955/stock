@@ -50,15 +50,18 @@
       background: #fee2e2; border: 1px solid #fca5a5; border-radius: 8px;
       color: #b91c1c; font-size: 12px; font-weight: 700; padding: 6px 10px; cursor: pointer;
     }
-    .del-stock-btn:active { background: #fecaca; }
 
-    .chart-container {
-      width: 100%; border-radius: 12px; overflow: hidden; background: #fafafa;
-      border: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: center;
-      min-height: 140px; justify-content: center;
+    /* 차트 박스 */
+    .chart-box {
+      width: 100%; border-radius: 12px; background: #ffffff;
+      border: 1px solid #e2e8f0; padding: 8px; display: flex; flex-direction: column; align-items: center;
     }
-    .chart-img { width: 100%; height: auto; display: block; }
-    .chart-notice { font-size: 11px; color: #94a3b8; margin: 8px 0; text-align: center; }
+    .chart-box img {
+      width: 100%; max-height: 220px; object-fit: contain; display: block;
+    }
+    .chart-tag {
+      font-size: 11px; color: #94a3b8; margin-top: 6px; text-align: center;
+    }
 
     .action-links {
       display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px;
@@ -103,9 +106,10 @@
         <button class="del-stock-btn" onclick="deleteCurrentStock()">이 종목 삭제</button>
       </div>
 
-      <div class="chart-container">
-        <img id="stockChart" class="chart-img" src="" alt="차트 불러오는 중..." />
-        <div class="chart-notice">※ 네이버 증권 공식 실시간 1일 시세 차트</div>
+      <!-- 차트 뷰어 (차단 방지 no-referrer 적용 및 정규 일봉 차트 연동) -->
+      <div class="chart-box">
+        <img id="stockChart" referrerpolicy="no-referrer" src="" alt="차트 연결 중..." />
+        <div class="chart-tag" id="chartNotice">일봉 시세 차트</div>
       </div>
 
       <div class="action-links">
@@ -128,7 +132,7 @@
       </div>
       <div class="input-group">
         <label>매수 사유 / 배당 일정 / 메모</label>
-        <textarea id="stockMemo" class="input-box" rows="3" placeholder="매수 사유, 배당락 일정 등을 기록하세요."></textarea>
+        <textarea id="stockMemo" class="input-box" rows="3" placeholder="매수 사유, 배당락 일정 등을 기록해 두세요."></textarea>
       </div>
       <button class="save-btn" onclick="saveMemo()">메모 & 목표가 저장</button>
     </div>
@@ -154,7 +158,6 @@
         btn.type = 'button';
         btn.className = `tab-btn ${idx === currentIndex ? 'active' : ''}`;
         btn.innerText = stock.name;
-        // 클릭 시 해당 순번(idx)을 명확하게 넘겨서 선택하도록 수정
         btn.onclick = () => selectStock(idx);
         container.appendChild(btn);
       });
@@ -187,8 +190,9 @@
       document.getElementById('dispName').innerText = stock.name;
       document.getElementById('dispCode').innerText = `${stock.code} · KOSPI/KOSDAQ`;
 
+      // 네이버 증권 일봉/당일 정규 차트 URL (차단 우회 referrerpolicy 적용)
       const t = new Date().getTime();
-      document.getElementById('stockChart').src = `https://ssl.pstatic.net/imgfinance/chart/mobile/mini/${stock.code}_end.png?${t}`;
+      document.getElementById('stockChart').src = `https://fchart.stock.naver.com/item/area.naver?symbol=${stock.code}&timeframe=day&count=60&requestType=0&_t=${t}`;
 
       document.getElementById('linkNaver').href = `https://m.stock.naver.com/domestic/stock/${stock.code}/total`;
       document.getElementById('linkDart').href = `https://dart.fss.or.kr/dsab007/main.do?textCrpNm=${encodeURIComponent(stock.name)}`;
@@ -211,7 +215,6 @@
       selectStock(myStocks.length - 1);
     }
 
-    // 종목 삭제 동작
     function deleteCurrentStock() {
       if (myStocks.length <= 1) {
         alert("최소 1개 이상의 종목이 있어야 합니다.");
@@ -225,7 +228,6 @@
         myStocks.splice(currentIndex, 1);
         localStorage.setItem('my_custom_stocks', JSON.stringify(myStocks));
         
-        // 삭제 후 첫 번째 종목으로 이동
         currentIndex = 0;
         renderTabs();
         updateDisplay();
@@ -242,7 +244,7 @@
         memo: document.getElementById('stockMemo').value
       };
       localStorage.setItem(`memo_${code}`, JSON.stringify(data));
-      alert(`[${myStocks[currentIndex].name}] 메모가 저장되었습니다.`);
+      alert(`[${myStocks[currentIndex].name}] 투자 메모가 저장되었습니다.`);
     }
 
     function loadMemo() {
@@ -261,7 +263,6 @@
       }
     }
 
-    // 처음 실행
     renderTabs();
     selectStock(0);
   </script>
