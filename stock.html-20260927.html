@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>나만의 주식 대시보드</title>
+  <style>
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; }
+    body {
+      margin: 0; padding: 16px; background-color: #f1f5f9; color: #1e293b;
+      display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+    }
+    .container { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 14px; }
+    
+    /* 상단 헤더 */
+    .header { display: flex; justify-content: space-between; align-items: center; }
+    .header h1 { font-size: 20px; font-weight: 800; margin: 0; color: #0f172a; }
+    .refresh-btn {
+      padding: 6px 12px; background: #2563eb; color: #fff; border: none;
+      border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .refresh-btn:active { opacity: 0.8; }
+
+    /* 종목 선택 탭 */
+    .tab-bar {
+      display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+    .tab-bar::-webkit-scrollbar { display: none; }
+    .tab-btn {
+      padding: 8px 14px; background: #ffffff; border: 1px solid #cbd5e1;
+      border-radius: 20px; font-size: 13px; font-weight: 600; white-space: nowrap;
+      cursor: pointer; transition: all 0.2s; color: #475569;
+    }
+    .tab-btn.active {
+      background: #0f172a; color: #ffffff; border-color: #0f172a;
+    }
+
+    /* 메인 시세 카드 */
+    .card {
+      background: #ffffff; border-radius: 16px; padding: 20px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
+    }
+    .stock-title { display: flex; justify-content: space-between; align-items: baseline; }
+    .stock-name { font-size: 22px; font-weight: 800; }
+    .stock-code { font-size: 13px; color: #64748b; font-weight: 500; }
+
+    .price-box { margin-top: 12px; display: flex; align-items: baseline; gap: 10px; }
+    .current-price { font-size: 32px; font-weight: 900; letter-spacing: -0.5px; }
+    .change-rate { font-size: 16px; font-weight: 700; }
+    .up { color: #dc2626; }    /* 상승(빨강) */
+    .down { color: #2563eb; }  /* 하락(파랑) */
+    .even { color: #475569; }  /* 보합 */
+
+    /* 세부 지표 그리드 */
+    .metric-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+      margin-top: 16px; padding-top: 16px; border-top: 1px solid #f1f5f9;
+    }
+    .metric-item { display: flex; flex-direction: column; gap: 2px; }
+    .metric-label { font-size: 12px; color: #64748b; }
+    .metric-val { font-size: 14px; font-weight: 700; color: #1e293b; }
+
+    /* 차트 및 포털 바로가기 */
+    .action-links { display: flex; gap: 8px; margin-top: 16px; }
+    .link-btn {
+      flex: 1; text-align: center; padding: 10px 0; background: #f8fafc;
+      border: 1px solid #cbd5e1; border-radius: 10px; text-decoration: none;
+      font-size: 13px; font-weight: 700; color: #334155;
+    }
+    .link-btn:active { background: #e2e8f0; }
+
+    /* 나만의 투자 메모 & 목표가 */
+    .memo-section { display: flex; flex-direction: column; gap: 8px; }
+    .memo-section h3 { font-size: 15px; margin: 0; font-weight: 700; color: #334155; }
+    .input-row { display: flex; gap: 8px; }
+    .target-input {
+      flex: 1; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px;
+      font-size: 13px; outline: none;
+    }
+    .memo-area {
+      width: 100%; height: 70px; padding: 10px; border: 1px solid #cbd5e1;
+      border-radius: 8px; font-size: 13px; resize: none; outline: none;
+    }
+    .save-memo-btn {
+      padding: 8px; background: #0f172a; color: #fff; border: none;
+      border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+
+    /* 실시간 뉴스 섹션 */
+    .news-card { display: flex; flex-direction: column; gap: 10px; }
+    .news-title { font-size: 15px; font-weight: 700; margin: 0; }
+    .news-item {
+      padding: 10px 0; border-bottom: 1px solid #f1f5f9; display: flex;
+      flex-direction: column; gap: 4px; text-decoration: none;
+    }
+    .news-item:last-child { border-bottom: none; }
+    .news-headline { font-size: 14px; font-weight: 600; color: #0f172a; line-height: 1.4; }
+    .news-meta { font-size: 11px; color: #94a3b8; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- 상단 바 -->
+  <div class="header">
+    <h1>📈 My Stock Dashboard</h1>
+    <button class="refresh-btn" onclick="fetchStockData()">새로고침</button>
+  </div>
+
+  <!-- 종목 전환 탭 (10개 미만) -->
+  <div class="tab-bar" id="stockTabs"></div>
+
+  <!-- 메인 시세 정보 카드 -->
+  <div class="card">
+    <div class="stock-title">
+      <span class="stock-name" id="stockName">기업은행</span>
+      <span class="stock-code" id="stockCode">024110 · KOSPI</span>
+    </div>
+    
+    <div class="price-box">
+      <span class="current-price" id="currPrice">--</span>
+      <span class="change-rate" id="changeRate">--</span>
+    </div>
+
+    <!-- 세부 지표 -->
+    <div class="metric-grid">
+      <div class="metric-item">
+        <span class="metric-label">전일종가</span>
+        <span class="metric-val" id="prevPrice">--</span>
+      </div>
+      <div class="metric-item">
+        <span class="metric-label">거래량</span>
+        <span class="metric-val" id="volume">--</span>
+      </div>
+      <div class="metric-item">
+        <span class="metric-label">금일 고가 / 저가</span>
+        <span class="metric-val" id="highLow">--</span>
+      </div>
+      <div class="metric-item">
+        <span class="metric-label">배당수익률 (추정)</span>
+        <span class="metric-val" id="dividendRate">약 6~7%대 고배당</span>
+      </div>
+    </div>
+
+    <!-- 포털 상세 차트/공시 바로가기 -->
+    <div class="action-links">
+      <a class="link-btn" id="naverLink" target="_blank" href="#">네이버 시세·차트</a>
+      <a class="link-btn" id="dartLink" target="_blank" href="#">전자공시(DART)</a>
+    </div>
+  </div>
+
+  <!-- 나만의 투자 메모 & 목표가 설정 -->
+  <div class="card memo-section">
+    <h3>🎯 나의 투자 계획 & 메모</h3>
+    <div class="input-row">
+      <input type="number" id="targetBuy" class="target-input" placeholder="목표 매수가 (원)" />
+      <input type="number" id="targetSell" class="target-input" placeholder="목표 매도가 (원)" />
+    </div>
+    <textarea id="memoText" class="memo-area" placeholder="매수 사유, 배당락 일정, 모니터링 이슈 등을 기록하세요."></textarea>
+    <button class="save-memo-btn" onclick="saveMemo()">메모 & 목표가 저장</button>
+  </div>
+
+  <!-- 최신 관련 뉴스 바로보기 -->
+  <div class="card news-card">
+    <div class="news-title">📰 관련 실시간 뉴스</div>
+    <div id="newsList">
+      <div style="font-size:13px; color:#94a3b8; text-align:center; padding:10px;">뉴스를 불러오는 중입니다...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 10개 미만의 내 관심 종목 리스트 (필요에 따라 종목코드와 이름을 추가/변경 가능)
+  const myStocks = [
+    { name: '기업은행', code: '024110' },
+    { name: '삼성전자', code: '005930' },
+    { name: 'KB금융', code: '105560' },
+    { name: '현대차', code: '005380' },
+    { name: 'SK하이닉스', code: '000660' }
+  ];
+
+  let currentStock = myStocks[0];
+
+  // 종목 탭 렌더링
+  function initTabs() {
+    const tabContainer = document.getElementById('stockTabs');
+    tabContainer.innerHTML = '';
+    myStocks.forEach(stock => {
+      const btn = document.createElement('button');
+      btn.className = `tab-btn ${stock.code === currentStock.code ? 'active' : ''}`;
+      btn.innerText = stock.name;
+      btn.onclick = () => selectStock(stock);
+      tabContainer.appendChild(btn);
+    });
+  }
+
+  // 종목 선택 시 변경
+  function selectStock(stock) {
+    currentStock = stock;
+    initTabs();
+    loadMemo();
+    fetchStockData();
+  }
+
+  // 시세 및 뉴스 가져오기
+  async function fetchStockData() {
+    document.getElementById('stockName').innerText = currentStock.name;
+    document.getElementById('stockCode').innerText = `${currentStock.code} · KOSPI`;
+    document.getElementById('naverLink').href = `https://m.stock.naver.com/domestic/stock/${currentStock.code}/total`;
+    document.getElementById('dartLink').href = `https://m.dart.fss.or.kr/search.do?text=${encodeURIComponent(currentStock.name)}`;
+
+    // 네이버 모바일 증권 오픈 데이터 호출 (CORS 프록시 사용)
+    const apiUrl = `https://m.stock.naver.com/api/stock/${currentStock.code}/basic`;
+    
+    try {
+      // 실시간 데이터 조회
+      const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`);
+      const rawData = await res.json();
+      const data = JSON.parse(rawData.contents);
+
+      if (data) {
+        const nowPrice = parseInt(data.closePrice.replace(/,/g, ''), 10);
+        const changePrice = parseInt(data.compareToPreviousClosePrice.replace(/,/g, ''), 10);
+        const rate = parseFloat(data.fluctuationsRatio);
+
+        const currEl = document.getElementById('currPrice');
+        const rateEl = document.getElementById('changeRate');
+
+        currEl.innerText = nowPrice.toLocaleString() + '원';
+        
+        let sign = '';
+        if (data.compareToPreviousPrice.name === 'RISING') {
+          currEl.className = 'current-price up';
+          rateEl.className = 'change-rate up';
+          sign = '+';
+        } else if (data.compareToPreviousPrice.name === 'FALLING') {
+          currEl.className = 'current-price down';
+          rateEl.className = 'change-rate down';
+          sign = '-';
+        } else {
+          currEl.className = 'current-price even';
+          rateEl.className = 'change-rate even';
+        }
+        rateEl.innerText = `${sign}${changePrice.toLocaleString()}원 (${sign}${rate}%)`;
+
+        document.getElementById('prevPrice').innerText = (nowPrice - (sign === '-' ? -changePrice : changePrice)).toLocaleString() + '원';
+        document.getElementById('volume').innerText = parseInt(data.accumulatedTradingVolume).toLocaleString() + ' 주';
+        document.getElementById('highLow').innerText = `${parseInt(data.highPrice).toLocaleString()} / ${parseInt(data.lowPrice).toLocaleString()}`;
+      }
+    } catch (e) {
+      console.warn('실시간 API 호출 대기 중 (장마감 또는 네트워크 상태 확인)');
+      // 기본값 표시
+      document.getElementById('currPrice').innerText = '시세 확인';
+      document.getElementById('changeRate').innerText = '상세보기 터치';
+    }
+
+    // 최신 뉴스 가져오기
+    renderNews();
+  }
+
+  // 관련 뉴스 렌더링
+  function renderNews() {
+    const newsContainer = document.getElementById('newsList');
+    newsContainer.innerHTML = `
+      <a class="news-item" target="_blank" href="https://m.stock.naver.com/domestic/stock/${currentStock.code}/news">
+        <div class="news-headline">[포털 최신 뉴스] ${currentStock.name} 실시간 속보 및 시장 반응 확인하기</div>
+        <div class="news-meta">네이버 증권 뉴스 피드로 바로 이동</div>
+      </a>
+      <a class="news-item" target="_blank" href="https://finance.naver.com/item/board.naver?code=${currentStock.code}">
+        <div class="news-headline">[투자자 토론방] ${currentStock.name} 실시간 주주 토론방 보기</div>
+        <div class="news-meta">종목 토론 및 실시간 체감 심리</div>
+      </a>
+    `;
+  }
+
+  // 로컬 저장소(localStorage)에 종목별 메모 및 목표가 저장/불러오기
+  function saveMemo() {
+    const buy = document.getElementById('targetBuy').value;
+    const sell = document.getElementById('targetSell').value;
+    const memo = document.getElementById('memoText').value;
+
+    const data = { buy, sell, memo };
+    localStorage.setItem(`stock_memo_${currentStock.code}`, JSON.stringify(data));
+    alert(`${currentStock.name} 투자 메모가 저장되었습니다.`);
+  }
+
+  function loadMemo() {
+    const saved = localStorage.getItem(`stock_memo_${currentStock.code}`);
+    if (saved) {
+      const data = JSON.parse(saved);
+      document.getElementById('targetBuy').value = data.buy || '';
+      document.getElementById('targetSell').value = data.sell || '';
+      document.getElementById('memoText').value = data.memo || '';
+    } else {
+      document.getElementById('targetBuy').value = '';
+      document.getElementById('targetSell').value = '';
+      document.getElementById('memoText').value = '';
+    }
+  }
+
+  // 초기 실행
+  window.onload = () => {
+    initTabs();
+    loadMemo();
+    fetchStockData();
+  };
+</script>
+
+</body>
+</html>
